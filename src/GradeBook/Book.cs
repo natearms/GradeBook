@@ -4,9 +4,18 @@ using System.Collections.Generic;
 
 namespace GradeBook
 {
-    //public delegate void GradeAddedDelegate();
+    public delegate void GradeAddedDelegate(object sender, EventArgs args);
 
-    public class Book
+    public class NamedObject
+    {
+        public string Name
+        {
+            get;
+            set;
+        }
+    }
+
+    public class Book : NamedObject
     {
         public Book(string name)
         {
@@ -38,8 +47,13 @@ namespace GradeBook
         {
             if (grade <= 100 && grade >= 0)
             {
-                grades.Add(grade);
                 ValidGrade = true;
+                grades.Add(grade);
+                if(GradeAdded != null)
+                {
+                    GradeAdded(this, new EventArgs());
+                }
+                
             }
             else
             {
@@ -47,6 +61,8 @@ namespace GradeBook
                 //throw new ArgumentException($"Invalid Grade {nameof(grade)}");
             }
         }
+        public event GradeAddedDelegate GradeAdded;
+
         public Statistics GetStatistics()
         {
             var results = new Statistics();
