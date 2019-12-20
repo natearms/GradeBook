@@ -64,7 +64,20 @@ namespace GradeBook
 
         public override Statistics GetStatistics()
         {
-            throw new NotImplementedException();
+            var result = new Statistics();
+            
+            using(var reader = File.OpenText($"{Name}.txt"))
+            {
+                var line = reader.ReadLine();
+                while (line != null)
+                {
+                    var number = double.Parse(line);
+                    result.Add(number);
+                    line = reader.ReadLine();
+                }
+            }
+
+            return result;
         }
     }
     public class InMemoryBook : Book
@@ -119,36 +132,10 @@ namespace GradeBook
         public override Statistics GetStatistics()
         {
             var results = new Statistics();
-            results.Average = 0.0;
-            results.High = double.MinValue;
-            results.Low = double.MaxValue;
 
             for (var index = 0; index < grades.Count; index++)
             {
-                results.Low = Math.Min(grades[index], results.Low);
-                results.High = Math.Max(grades[index], results.High);
-                results.Average += grades[index];
-            }
-            
-            results.Average /= grades.Count;
-
-            switch (results.Average)
-            {
-                case var d when d >= 90.0:
-                    results.Letter = 'A';
-                    break;
-                case var d when d >= 80.0:
-                    results.Letter = 'B';
-                    break;
-                case var d when d >= 70.0:
-                    results.Letter = 'C';
-                    break;
-                case var d when d >= 60.0:
-                    results.Letter = 'D';
-                    break;
-                default:
-                    results.Letter = 'F';
-                    break;
+                results.Add(grades[index]);
             }
             return results;
         }
