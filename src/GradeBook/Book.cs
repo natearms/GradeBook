@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.IO;
 using System.Collections.Generic;
 
 namespace GradeBook
@@ -8,6 +9,10 @@ namespace GradeBook
 
     public class NamedObject
     {
+        public NamedObject(string name)
+        {
+            Name = name;
+        }
         public string Name
         {
             get;
@@ -15,12 +20,77 @@ namespace GradeBook
         }
     }
 
-    public class Book : NamedObject
+    public interface IBook
     {
-        public Book(string name)
+        void AddGrade(double grade);
+        Statistics GetStatistics();
+        string Name { get; }
+        event GradeAddedDelegate GradeAdded;
+    }
+
+    public abstract class Book : NamedObject, IBook
+    {
+        public Book(string name) : base(name)
+        {
+        }
+
+        public abstract event GradeAddedDelegate GradeAdded;
+
+        public abstract void AddGrade(double grade);
+
+        public abstract Statistics GetStatistics();
+    }
+    public class DiskBook : Book
+    {
+        public DiskBook(string name) : base(name)
+        {
+
+        }
+
+        public override event GradeAddedDelegate GradeAdded;
+
+        public override void AddGrade(double grade)
+        {
+            using (var writer = File.AppendText($"{Name}.txt"))
+            {
+                writer.WriteLine(grade);
+                if(GradeAdded != null)
+                {
+                    GradeAdded(this, new EventArgs());
+                }
+            }
+            
+        }
+
+        public override Statistics GetStatistics()
+        {
+            throw new NotImplementedException();
+        }
+    }
+    public class InMemoryBook : Book
+    {
+        public InMemoryBook(string name) : base(name)
         {
             grades = new List<double>();
             Name = name;
+        }
+        public override void AddGrade(double grade)
+        {
+            if (grade <= 100 && grade >= 0)
+            {
+                ValidGrade = true;
+                grades.Add(grade);
+                if (GradeAdded != null)
+                {
+                    GradeAdded(this, new EventArgs());
+                }
+
+            }
+            else
+            {
+                ValidGrade = false;
+                //throw new ArgumentException($"Invalid Grade {nameof(grade)}");
+            }
         }
         public void AddGrade(char letter)
         {
@@ -43,27 +113,10 @@ namespace GradeBook
                     break;
             }
         }
-        public void AddGrade(double grade)
-        {
-            if (grade <= 100 && grade >= 0)
-            {
-                ValidGrade = true;
-                grades.Add(grade);
-                if(GradeAdded != null)
-                {
-                    GradeAdded(this, new EventArgs());
-                }
-                
-            }
-            else
-            {
-                ValidGrade = false;
-                //throw new ArgumentException($"Invalid Grade {nameof(grade)}");
-            }
-        }
-        public event GradeAddedDelegate GradeAdded;
+        
+        public override event GradeAddedDelegate GradeAdded;
 
-        public Statistics GetStatistics()
+        public override Statistics GetStatistics()
         {
             var results = new Statistics();
             results.Average = 0.0;
@@ -101,13 +154,6 @@ namespace GradeBook
         }
 
         private List<double> grades;
-        
-        public string Name
-        {
-            get; set;
-        }
-
-
         public const string CATEGORY = "Science";
         public bool ValidGrade;
         
